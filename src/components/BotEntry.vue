@@ -16,7 +16,7 @@
         R
       </b-form-checkbox>
       <div v-if="!noButtons" class="d-flex flex-align-cent">
-        <b-button class="ml-1" size="sm" title="Delete bot" @click="$emit('edit')">
+        <b-button class="ml-1" size="sm" title="Edit bot" @click="$emit('edit')">
           <EditIcon :size="16" />
         </b-button>
 
