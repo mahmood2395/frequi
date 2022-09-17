@@ -85,7 +85,7 @@
             v-if="btFormMode !== 'visualize' && showLeftBar"
             :backtest-history="botStore.activeBot.backtestHistory"
             :selected-backtest-result-key="botStore.activeBot.selectedBacktestResultKey"
-            @selectionChange="setBacktestResult"
+            @selectionChange="botStore.activeBot.setBacktestResultKey"
           />
         </transition>
       </div>
@@ -251,21 +251,10 @@
         class="flex-fill"
       />
 
-      <div
+      <BacktestGraphsView
         v-if="hasBacktestResult && btFormMode == 'visualize-summary'"
-        class="text-center flex-fill mt-2 d-flex flex-column"
-      >
-        <TradesLogChart
-          :trades="botStore.activeBot.selectedBacktestResult.trades"
-          class="trades-log"
-        />
-        <CumProfitChart
-          :trades="botStore.activeBot.selectedBacktestResult.trades"
-          profit-column="profit_abs"
-          class="cum-profit"
-          :show-title="true"
-        />
-      </div>
+        :trades="botStore.activeBot.selectedBacktestResult.trades"
+      />
     </div>
 
     <div
@@ -342,13 +331,12 @@ import BacktestResultView from '@/components/ftbot/BacktestResultView.vue';
 import BacktestResultSelect from '@/components/ftbot/BacktestResultSelect.vue';
 import CandleChartContainer from '@/components/charts/CandleChartContainer.vue';
 import StrategySelect from '@/components/ftbot/StrategySelect.vue';
-import CumProfitChart from '@/components/charts/CumProfitChart.vue';
-import TradesLogChart from '@/components/charts/TradesLog.vue';
 import PairSummary from '@/components/ftbot/PairSummary.vue';
 import TimeframeSelect from '@/components/ftbot/TimeframeSelect.vue';
 import TradeList from '@/components/ftbot/TradeList.vue';
 import TradeListNav from '@/components/ftbot/TradeListNav.vue';
 import BacktestHistoryLoad from '@/components/ftbot/BacktestHistoryLoad.vue';
+import BacktestGraphsView from '@/components/ftbot/BacktestGraphsView.vue';
 
 import { BacktestPayload, ChartSliderPosition, Trade } from '@/types';
 
@@ -360,12 +348,11 @@ export default defineComponent({
   name: 'Backtesting',
   components: {
     BacktestResultView,
+    BacktestGraphsView,
     BacktestResultSelect,
     BacktestHistoryLoad,
     TimeRangeSelect,
     CandleChartContainer,
-    CumProfitChart,
-    TradesLogChart,
     StrategySelect,
     PairSummary,
     TimeframeSelect,
@@ -403,9 +390,7 @@ export default defineComponent({
     const pollInterval = ref<number | null>(null);
     const sliderPosition = ref<ChartSliderPosition>();
 
-    const setBacktestResult = (key: string) => {
-      botStore.activeBot.setBacktestResultKey(key);
-
+    const selectBacktestResult = () => {
       // Set parameters for this result
       strategy.value = botStore.activeBot.selectedBacktestResult.strategy_name;
       selectedTimeframe.value = botStore.activeBot.selectedBacktestResult.timeframe;
@@ -413,6 +398,13 @@ export default defineComponent({
         botStore.activeBot.selectedBacktestResult.timeframe_detail || '';
       timerange.value = botStore.activeBot.selectedBacktestResult.timerange;
     };
+
+    watch(
+      () => botStore.activeBot.selectedBacktestResultKey,
+      () => {
+        selectBacktestResult();
+      },
+    );
 
     const clickBacktest = () => {
       const btPayload: BacktestPayload = {
@@ -479,7 +471,6 @@ export default defineComponent({
       formatPercent,
       hasBacktestResult,
       timeframe,
-      setBacktestResult,
       strategy,
       selectedTimeframe,
       selectedDetailTimeframe,
@@ -507,14 +498,6 @@ export default defineComponent({
   height: calc(100vh - 250px) !important;
 }
 
-.cum-profit {
-  height: 350px !important;
-  max-height: 350px;
-}
-.trades-log {
-  height: 350px !important;
-  max-height: 350px;
-}
 .bt-running-label {
   position: absolute;
   right: 2em;
